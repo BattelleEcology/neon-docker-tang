@@ -3,13 +3,10 @@ FROM alpine:3.15.0 AS builder
 # Dependabot does not support build args in a FROM. Need to duplicate the container version two places.
 # ARG ALPINEVERSION=3.14.2
 
-
 # ARG JOSE_COMMIT_SHA=145c41a4ec70c15f6f8aa12a915e16cb60f0991f
 # ARG TANG_COMMIT_SHA=8affe3580c97280a8da31514d47c4ac4981992ec
 ARG JOSE_COMMIT_SHA=v11
 ARG TANG_COMMIT_SHA=v11
-
-
 
 RUN apk add --no-cache --update \
     bash \
