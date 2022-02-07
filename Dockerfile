@@ -63,8 +63,7 @@ COPY --from=builder \
 # COPY setup-volume.sh \
 #      /etc/docker-entrypoint.d/setup-volume.sh
 
-RUN chmod +x /etc/docker-entrypoint.d/setup-volume.sh \
- && apk add --no-cache --update \
+RUN apk add --no-cache --update \
         bash \
         http-parser \
         jansson \
