@@ -1,11 +1,11 @@
 
-FROM alpine:3.19.1 AS builder
+FROM alpine:3.20.0 AS builder
 # Dependabot does not support build args in a FROM. Need to duplicate the container version two places.
 # ARG ALPINEVERSION=3.14.2
 
 # ARG JOSE_COMMIT_SHA=145c41a4ec70c15f6f8aa12a915e16cb60f0991f
 # ARG TANG_COMMIT_SHA=8affe3580c97280a8da31514d47c4ac4981992ec
-ARG JOSE_COMMIT_SHA=v13
+ARG JOSE_COMMIT_SHA=v14
 ARG TANG_COMMIT_SHA=v15
 
 RUN apk add --no-cache --update \
@@ -37,8 +37,7 @@ RUN git clone https://github.com/latchset/tang.git \
  && meson .. --prefix=/usr/local \
  && ninja install
 
-FROM alpine:3.19.1
-
+FROM alpine:3.20.0
 
 COPY --from=builder \
      /usr/local/bin/jose \
@@ -57,9 +56,6 @@ COPY --from=builder \
      /usr/local/libexec/tangd-keygen \
      /usr/local/bin/tangd-keygen
 
-# COPY setup-volume.sh \
-#      /etc/docker-entrypoint.d/setup-volume.sh
-
 RUN apk add --no-cache --update \
         bash \
         http-parser \
@@ -68,10 +64,8 @@ RUN apk add --no-cache --update \
         socat \
         zlib
 
-
 EXPOSE 8080
 # VOLUME [ "/db" ]
-
 
 CMD [ "socat", "tcp-l:8080,reuseaddr,fork", "exec:'tangd /db'" ]
 
