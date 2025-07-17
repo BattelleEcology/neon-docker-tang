@@ -1,4 +1,3 @@
-
 FROM alpine:3.22.1 AS builder
 # Dependabot does not support build args in a FROM. Need to duplicate the container version two places.
 # ARG ALPINEVERSION=3.14.2
@@ -38,7 +37,6 @@ RUN git clone https://github.com/latchset/tang.git \
  && ninja install
 
 FROM alpine:3.22.1
-
 COPY --from=builder \
      /usr/local/bin/jose \
      /usr/local/bin/jose
