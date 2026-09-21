@@ -15,7 +15,7 @@ jobs:
       platforms: linux/amd64,linux/arm64
       push: ${{ github.event_name != 'pull_request' }}
       meta-images: |
-        ${{ vars.SHARED_WIF_LOCATION }}-docker.pkg.dev/${{ vars.SHARED_WIF_PROJECT }}/${{ vars.SHARED_WIF_REPO }}/${{ github.event.repository.name }}
+        ${{ vars.SHARED_WIF_LOCATON }}-docker.pkg.dev/${{ vars.SHARED_WIF_PROJECT }}/${{ vars.SHARED_WIF_REPO }}/${{ github.event.repository.name }}
       meta-annotations: |
         type=org.opencontainers.image.description,value=${{ github.event.repository.description || 'No description provided' }}
       meta-tags: |
