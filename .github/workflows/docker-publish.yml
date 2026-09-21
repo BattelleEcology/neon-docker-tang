@@ -26,9 +26,9 @@ jobs:
             type=sha
       registry-identities: |
         - type: gcp-wif
-          registry: "${{ vars.SHARED_WIF_LOCATION }}-docker.pkg.dev/"
-          workload_identity_provider: "${{ vars.SHARED_WIF_PROVIDER }}"
-          service_account:  "${{ vars.SHARED_WIF_SERVICE_ACCOUNT }}"
-          project_id: "${{ vars.SHARED_WIF_PROJECT }}"
+          registry: ${{ vars.SHARED_WIF_LOCATON }}-docker.pkg.dev
+          workload_identity_provider: ${{ vars.SHARED_WIF_PROVIDER }}
+          service_account: ${{ vars.SHARED_WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.SHARED_WIF_PROJECT }}
       set-meta-annotations: true
       set-meta-labels: true
