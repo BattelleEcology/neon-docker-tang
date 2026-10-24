@@ -1,10 +1,12 @@
 FROM alpine:3.24.2 AS builder
-# Dependabot does not support build args in a FROM. Need to duplicate the container version two places.
+# The Alpine version is duplicated in both FROM lines; Renovate updates them together.
 # ARG ALPINEVERSION=3.14.2
 
 # ARG JOSE_COMMIT_SHA=145c41a4ec70c15f6f8aa12a915e16cb60f0991f
 # ARG TANG_COMMIT_SHA=8affe3580c97280a8da31514d47c4ac4981992ec
+# renovate: datasource=github-tags depName=latchset/jose
 ARG JOSE_COMMIT_SHA=v14
+# renovate: datasource=github-tags depName=latchset/tang
 ARG TANG_COMMIT_SHA=v15
 
 RUN apk add --no-cache --update \
