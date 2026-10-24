@@ -1,4 +1,4 @@
-FROM alpine:3.24.2 AS builder
+FROM alpine:3.24.3 AS builder
 # The Alpine version is duplicated in both FROM lines; Renovate updates them together.
 # ARG ALPINEVERSION=3.14.2
 
@@ -38,7 +38,7 @@ RUN git clone https://github.com/latchset/tang.git \
  && meson .. --prefix=/usr/local \
  && ninja install
 
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 COPY --from=builder \
      /usr/local/bin/jose \
      /usr/local/bin/jose
