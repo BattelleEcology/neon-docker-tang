@@ -1,0 +1,25 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended'],
+  customManagers: [
+    {
+      // jose and tang are built from source at the git tag in a Dockerfile ARG,
+      // which no built-in manager can see. Annotate the ARG with a comment on
+      // the line above it:
+      //   # renovate: datasource=github-tags depName=latchset/jose
+      //   ARG JOSE_COMMIT_SHA=v14
+      customType: 'regex',
+      managerFilePatterns: ['/(^|/)Dockerfile$/'],
+      matchStrings: [
+        '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG \\w+=(?<currentValue>\\S+)',
+      ],
+    },
+  ],
+  packageRules: [
+    {
+      // Combine all action updates into a single PR
+      matchManagers: ['github-actions'],
+      groupName: 'GitHub Actions',
+    },
+  ],
+}
