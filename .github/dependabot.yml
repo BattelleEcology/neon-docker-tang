@@ -4,8 +4,18 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      # Combine all base image updates into a single PR
+      docker:
+        patterns:
+          - "*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       # Check for updates to GitHub Actions every weekday
       interval: "daily"
+    groups:
+      # Combine all action updates into a single PR
+      github-actions:
+        patterns:
+          - "*"
