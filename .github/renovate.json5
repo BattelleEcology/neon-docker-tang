@@ -1,6 +1,10 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: ['config:recommended'],
+  // Renovate merges the PR itself once every check on it has passed. GitHub's
+  // native auto-merge would merge straight away here, because the org's
+  // default-branch ruleset doesn't require any status checks.
+  platformAutomerge: false,
   customManagers: [
     {
       // jose and tang are built from source at the git tag in a Dockerfile ARG,
@@ -17,9 +21,23 @@
   ],
   packageRules: [
     {
-      // Combine all action updates into a single PR
+      // Both Dockerfile stages are FROM alpine:<version>, so one PR bumps
+      // both. Every alpine, jose and tang update (jose and tang only release
+      // majors) is merged once its PR build passes. The push to main then
+      // publishes the image tagged v<alpine>-tang<tang>-jose<jose> and tags
+      // this repo with it (see .github/workflows/docker-publish.yml).
+      description: 'Automerge alpine, jose and tang updates',
+      matchDepNames: ['alpine', 'latchset/jose', 'latchset/tang'],
+      automerge: true,
+    },
+    {
+      // Combine all action updates into a single PR, merged once its PR build
+      // passes. Action updates don't change the version, so they republish
+      // the current version's image tag but add no repo tag.
+      description: 'Group and automerge GitHub Actions updates',
       matchManagers: ['github-actions'],
       groupName: 'GitHub Actions',
+      automerge: true,
     },
   ],
 }

@@ -1,0 +1,118 @@
+name: Docker
+
+# Builds via Docker's reusable workflow, which runs BuildKit in an isolated
+# job and attaches signed SLSA provenance to pushed images.
+# https://github.com/docker/github-builder
+#
+# Release flow: Renovate bumps the alpine base image, jose or tang in the
+# Dockerfile and automerges once the PR build passes. The push to main then
+# publishes the image tagged v<alpine>-tang<tang>-jose<jose> (e.g.
+# v3.24.3-tangv15-josev15) and tags this repo with the same name.
+
+on:
+  push:
+    branches: [ main ]
+    # Tags pushed by hand still publish an image under that tag
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Superseded PR builds are cancelled, but main builds queue so the last
+  # merge's image is the one left on the version tag
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The Dockerfile is the single source of the version, so the image and
+      # git tags can't drift from what was built: the alpine version from the
+      # FROM lines, and the jose and tang git tags from their ARGs
+      - id: version
+        run: |
+          one() {
+            if [ "$(printf '%s\n' "$2" | grep -c .)" -ne 1 ]; then
+              echo "::error file=Dockerfile::Expected one $1 version in the Dockerfile, got: ${2:-none}"
+              exit 1
+            fi
+          }
+          alpine=$(sed -n 's/^FROM alpine:\([^ ]*\).*/\1/p' Dockerfile | sort -u)
+          tang=$(sed -n 's/^ARG TANG_COMMIT_SHA=//p' Dockerfile | sort -u)
+          jose=$(sed -n 's/^ARG JOSE_COMMIT_SHA=//p' Dockerfile | sort -u)
+          one alpine "$alpine"
+          one tang "$tang"
+          one jose "$jose"
+          echo "version=$alpine-tang$tang-jose$jose" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    uses: docker/github-builder/.github/workflows/build.yml@a31d2311da4d55e21b978c1c52bab82ba97d51ee # v1.19.0
+    permissions:
+      contents: read # to fetch the repository content
+      id-token: write # for signing attestations, cache entries with GitHub OIDC and log in to Google Artifact Registry
+    with:
+      cache: true
+      output: image
+      # Each platform builds natively on its own runner (the workflow's default
+      # runner mapping sends linux/arm* to ubuntu-*-arm), then they're merged
+      # into one multi-arch manifest
+      platforms: linux/amd64,linux/arm64
+      push: ${{ github.event_name != 'pull_request' }}
+      meta-images: |
+        ${{ vars.SHARED_WIF_LOCATION }}-docker.pkg.dev/${{ vars.SHARED_WIF_PROJECT }}/${{ vars.SHARED_WIF_REPO }}/${{ github.event.repository.name }}
+      meta-annotations: |
+        type=org.opencontainers.image.description,value=${{ github.event.repository.description || 'No description provided' }}
+      # Images from main also carry the version (v3.24.3-tangv15-josev15).
+      # Later main builds of the same version move that tag to the newer image.
+      # Version tags need the v prefix, or the registry cleanup rules delete
+      # the image.
+      meta-tags: |
+        type=raw,value=v${{ needs.plan.outputs.version }},enable={{is_default_branch}}
+        type=ref,event=branch
+        type=ref,event=tag
+        type=ref,event=pr
+        type=sha
+      registry-identities: |
+        - type: gcp-wif
+          registry: ${{ vars.SHARED_WIF_LOCATION }}-docker.pkg.dev
+          workload_identity_provider: ${{ vars.SHARED_WIF_PROVIDER }}
+          service_account: ${{ vars.SHARED_WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.SHARED_WIF_PROJECT }}
+      set-meta-annotations: true
+      set-meta-labels: true
+
+  # Tags the repo v<version> after the first successful publish of that
+  # version. Done here rather than by triggering on tag pushes because tags
+  # pushed with GITHUB_TOKEN don't start new workflow runs. GITHUB_TOKEN also
+  # can't tag a commit that changes .github/workflows/ (HTTP 403), so keep
+  # version bumps out of PRs that change workflows, or tag those by hand.
+  tag:
+    needs: [ plan, build ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v${{ needs.plan.outputs.version }}
+    steps:
+      - run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            echo "$TAG already exists; leaving it on its original commit"
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent
+            echo "Tagged $GITHUB_SHA as $TAG"
+          fi
