@@ -1,4 +1,4 @@
-FROM alpine:3.24.3 AS builder
+FROM alpine:3.24.4 AS builder
 # The Alpine version is duplicated in both FROM lines; Renovate updates them together.
 # ARG ALPINEVERSION=3.14.2
 
@@ -7,7 +7,7 @@ FROM alpine:3.24.3 AS builder
 # renovate: datasource=github-tags depName=latchset/jose
 ARG JOSE_COMMIT_SHA=v15
 # renovate: datasource=github-tags depName=latchset/tang
-ARG TANG_COMMIT_SHA=v15
+ARG TANG_COMMIT_SHA=v16
 
 RUN apk add --no-cache --update \
     bash \
@@ -38,7 +38,7 @@ RUN git clone https://github.com/latchset/tang.git \
  && meson .. --prefix=/usr/local \
  && ninja install
 
-FROM alpine:3.24.3
+FROM alpine:3.24.4
 COPY --from=builder \
      /usr/local/bin/jose \
      /usr/local/bin/jose
