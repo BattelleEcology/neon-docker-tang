@@ -21,13 +21,18 @@
   ],
   packageRules: [
     {
-      // Both Dockerfile stages are FROM alpine:<version>, so one PR bumps
-      // both. Every alpine, jose and tang update (jose and tang only release
-      // majors) is merged once its PR build passes. The push to main then
-      // publishes the image tagged v<alpine>-tang<tang>-jose<jose> and tags
-      // this repo with it (see .github/workflows/docker-publish.yml).
-      description: 'Automerge alpine, jose and tang updates',
+      // alpine, jose and tang together make up the image version, so they
+      // share one PR (the image and repo tag then move once per batch, not
+      // once per dependency). separateMajorMinor is off so that jose and tang,
+      // which only release majors, don't get a separate "(major)" PR from
+      // alpine's minor and patch bumps. The PR is merged once its build
+      // passes; the push to main then publishes the image tagged
+      // v<alpine>-tang<tang>-jose<jose> and tags this repo with it (see
+      // .github/workflows/docker-publish.yml).
+      description: 'Group and automerge alpine, jose and tang updates',
       matchDepNames: ['alpine', 'latchset/jose', 'latchset/tang'],
+      groupName: 'Docker dependencies',
+      separateMajorMinor: false,
       automerge: true,
     },
     {
