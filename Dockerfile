@@ -7,7 +7,7 @@ FROM alpine:3.24.3 AS builder
 # renovate: datasource=github-tags depName=latchset/jose
 ARG JOSE_COMMIT_SHA=v15
 # renovate: datasource=github-tags depName=latchset/tang
-ARG TANG_COMMIT_SHA=v15
+ARG TANG_COMMIT_SHA=v16
 
 RUN apk add --no-cache --update \
     bash \
